@@ -1,2 +1,2 @@
 # doctoroffice-backend
-Management System For a Doctors Office-Backend
+Backend code for a Doctor Office Management System that uses an Azure SQL database. Includes development code of database. Connection to the database is closed for cost saving purposes. 

@@ -3,91 +3,69 @@ var app = express();
 const cors = require('cors')
 var sql = require("mssql");
 const { SlowBuffer } = require('buffer');
+const dotenv = require('dotenv')
+dotenv.config()
+
 
 app.use(express.json())
 app.use(cors())
 
 
-app.get('/teen', function(req, res){
+//Endpoint to retreive patient's appointment record 
+app.post('/patient', function(req, res){
 
-    var amountCharged = 50
+    //Retrieve value the user entered
+    var id = req.body.recordId
+
+    //Connect to database with authorization
     var config = {
-        user: 'dsuaib',
-        password: 'Incorrect1',
-        server: 'firstaitserver.database.windows.net', 
-        database: 'firstDatabase' 
+        user: process.env.USER,
+        password: process.env.PASSWORD,
+        server: process.env.SERVER, 
+        database: process.env.DATABASE 
     };
-
-    sql.connect(config, function (err) {
-    
+    sql.connect(config, function (err) {  
         if (err) console.log(err);
-
-        // create Request object
         var request = new sql.Request();
-           
-        // query to the database and get the records
-        request.query(`insert into record (Date, AmountCharged, DiagnosisID, EmployeeID, PatientID) values (CONVERT(VARCHAR(10), '2021-05-02'), '${amountCharged}', '1', '6', '1')`, function (err, recordset) {
-            
-            if (err) console.log(err)
 
-            // send records as a response
-            res.send(recordset);
+        // Query database to retrieving record with matching RecordID
+        request.query(`select * from Record where RecordID ='${id}'`, function (err, rows) {
+            if (err) {
+                res.json({message: 'RecordID does not exists'})
+                console.log(err)
+            } 
+
+            // returns the record of the patient's appointment as JSON object
+            res.status(200).json(rows.recordset[0])
             sql.close();
         });
     });
 });
-app.get('/patient/:id', function(req, res){
 
-    var id = req.params.id
-
-    var config = {
-        user: 'dsuaib',
-        password: 'Incorrect1',
-        server: 'firstaitserver.database.windows.net', 
-        database: 'firstDatabase' 
-    };
-
-    sql.connect(config, function (err) {
-    
-        if (err) console.log(err);
-
-        // create Request object
-        var request = new sql.Request();
-           
-        // query to the database and get the records
-        request.query(`select * from record where PatientID ='${id})`, function (err, recordset) {
-            
-            if (err) console.log(err)
-
-            // send records as a response
-            res.send(recordset);
-            sql.close();
-        });
-    });
-});
+//Endpoint to create patient appointment record
 app.post('/createrecord', function(req, res){
     
+     //Retrieve value the user entered
     var dateInfo = req.body.dateInfo
     var diagnosisId = req.body.diagnosisId
     var employeeId = req.body.employeeId
     var patientId = req.body.patientId
     var amountCharged = req.body.amountCharged
 
+    //Connect to database with authorization
     var config = {
-        user: 'dsuaib',
-        password: 'Incorrect1',
-        server: 'firstaitserver.database.windows.net', 
-        database: 'firstDatabase' 
+        user: process.env.USER,
+        password: process.env.PASSWORD,
+        server: process.env.SERVER, 
+        database: process.env.DATABASE 
     };
 
     sql.connect(config, err => {
     
         if (err) console.log(err);
-
-        // create Request object
         var request = new sql.Request()
 
-        // query to the database and get the records
+//Pass in values with proper data types and execute add_record_of_patient_appointment procedure
         request
         .input('Date', sql.Date, dateInfo)
         .input('AmountCharged', sql.Numeric(12,2), amountCharged)
@@ -95,109 +73,48 @@ app.post('/createrecord', function(req, res){
         .input('PatientID', sql.Int, patientId)   
         .input('EmployeeID', sql.Int, employeeId)
         .execute('add_record_of_patient_appointment', (err, result) =>{
-            res.send(result)
+            res.json({message: 'Appointment Record Added!'})
             sql.close();
         })        
         });
 });
 
-app.get('/', function (req, res) {
-
-
-    // config for your database
-    var config = {
-        user: 'dsuaib',
-        password: 'Incorrect1',
-        server: 'firstaitserver.database.windows.net', 
-        database: 'firstDatabase' 
-    };
-
-    // connect to your database
-    sql.connect(config, function (err) {
-    
-        if (err) console.log(err);
-
-        // create Request object
-        var request = new sql.Request();
-           
-        // query to the database and get the records
-        request.query('select * from Office', function (err, recordset) {
-            
-            if (err) console.log(err)
-
-            // send records as a response
-            res.send(recordset);
-            sql.close();
-        });
-    });
-});
-
+//Endpoint to submit a payment
 app.post('/createpayment', function(req, res){
     
+    //Retrieve value the user entered
     var dateInfo = req.body.dateInfo
     var paymentTypeId = req.body.paymentTypeId
     var patientId = req.body.patientId
     var paymentAmount = req.body.paymentAmount
 
-
+    //Connect to database with authorization
     var config = {
-        user: 'dsuaib',
-        password: 'Incorrect1',
-        server: 'firstaitserver.database.windows.net', 
-        database: 'firstDatabase' 
+        user: process.env.USER,
+        password: process.env.PASSWORD,
+        server: process.env.SERVER, 
+        database: process.env.DATABASE 
     };
 
     sql.connect(config, err => {
     
         if (err) console.log(err);
-
-        // create Request object
         var request = new sql.Request()
 
-        // query to the database and get the records
+//Pass in values with proper data types and execute record_patient_payment procedure
         request
         .input('Date', sql.Date, dateInfo)
         .input('PaymentAmount', sql.Numeric(12,2), paymentAmount) 
         .input('PaymentTypeID', sql.Int, paymentTypeId)
         .input('PatientID', sql.Int, patientId)   
         .execute('record_patient_payment', (err, result) =>{
-            res.send(result)
+            res.json({message: 'Payment Successful!'})
             sql.close();
         })        
         });
 });
 
-app.get('/', function (req, res) {
-
-
-    // config for your database
-    var config = {
-        user: 'dsuaib',
-        password: 'Incorrect1',
-        server: 'firstaitserver.database.windows.net', 
-        database: 'firstDatabase' 
-    };
-
-    // connect to your database
-    sql.connect(config, function (err) {
-    
-        if (err) console.log(err);
-
-        // create Request object
-        var request = new sql.Request();
-           
-        // query to the database and get the records
-        request.query('select * from Office', function (err, recordset) {
-            
-            if (err) console.log(err)
-
-            // send records as a response
-            res.send(recordset);
-            sql.close();
-        });
-    });
-});
 
 var server = app.listen(8080, function () {
-    console.log('Server is running..');
+    console.log('Server is up and running!');
 });
